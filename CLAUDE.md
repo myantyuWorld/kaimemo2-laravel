@@ -9,21 +9,42 @@ This is a Laravel 12 + Vue 3 + TypeScript application using Inertia.js as the br
 ### Key Architecture Components
 
 - **Backend**: Laravel 12 with Fortify for authentication
-- **Frontend**: Vue 3 with TypeScript and Inertia.js
+- **Frontend**: Vue 3 with TypeScript and Inertia.js using **FSD (Feature-Sliced Design)** architecture
 - **UI Library**: Reka UI components with Tailwind CSS v4
 - **Build Tool**: Vite with Laravel Wayfinder plugin
 - **Testing**: Pest for PHP, built-in test structure
 
 ### Directory Structure
 
+#### Backend (Laravel)
 - `src/app/` - Laravel application code (controllers, models, middleware)
-- `src/resources/js/` - Vue.js frontend application
-  - `pages/` - Inertia.js pages (Dashboard, Settings, etc.)
-  - `components/` - Vue components including UI library components
-  - `composables/` - Vue composables (useAppearance, useTwoFactorAuth, etc.)
-  - `wayfinder/` - Laravel Wayfinder configuration
-- `src/resources/css/` - Stylesheets
 - `src/tests/` - PHP tests (Unit and Feature directories)
+
+#### Frontend (FSD Architecture)
+- `src/resources/js-fsd/` - Vue.js frontend application following FSD principles
+  - `app/` - Application-wide setup, providers, app entry point
+  - `pages/` - Inertia.js pages (Dashboard, Settings, Auth pages, etc.)
+  - `widgets/` - Large composite UI blocks (AppShell, Navigation, Layout widgets)
+  - `features/` - Business features (Auth, Settings, User management, Appearance)
+  - `entities/` - Business entities (User, etc.)
+  - `shared/` - Shared utilities and components
+    - `ui/` - Reusable UI components (Reka UI library + common components)
+    - `lib/` - Utility functions
+    - `composables/` - Vue composables (useAppearance, useTwoFactorAuth, etc.)
+    - `types/` - TypeScript type definitions
+    - `api/` - API actions and routes
+    - `config/` - Configuration (Wayfinder, etc.)
+
+#### Path Aliases
+- `@app/*` → `src/resources/js-fsd/app/*`
+- `@pages/*` → `src/resources/js-fsd/pages/*`
+- `@widgets/*` → `src/resources/js-fsd/widgets/*`
+- `@features/*` → `src/resources/js-fsd/features/*`
+- `@entities/*` → `src/resources/js-fsd/entities/*`
+- `@shared/*` → `src/resources/js-fsd/shared/*`
+- `~/*` → `src/resources/js-fsd/*`
+
+- `src/resources/css/` - Stylesheets
 
 ## Development Commands
 
