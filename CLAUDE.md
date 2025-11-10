@@ -4,106 +4,133 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Structure
 
-This is a Laravel 12 + Vue 3 + TypeScript application using Inertia.js as the bridge. The main codebase is in the `src/` directory, with the root containing configuration files.
+This is a monorepo with a Laravel 12 backend and Vue 3 + TypeScript frontend using separate directories. The project uses **FSD (Feature-Sliced Design)** architecture for the frontend.
 
 ### Key Architecture Components
 
-- **Backend**: Laravel 12 with Fortify for authentication
-- **Frontend**: Vue 3 with TypeScript and Inertia.js using **FSD (Feature-Sliced Design)** architecture
-- **UI Library**: Reka UI components with Tailwind CSS v4
-- **Build Tool**: Vite with Laravel Wayfinder plugin
-- **Testing**: Pest for PHP, built-in test structure
+- **Backend**: Laravel 12 with Sanctum for authentication
+- **Frontend**: Vue 3 with TypeScript using **FSD (Feature-Sliced Design)** architecture
+- **Testing**: PHPUnit for backend, Vitest for frontend
+- **Code Quality**: Laravel Pint (PHP), ESLint + Prettier (JS/TS)
+- **Development Tools**: mise for task management, lefthook for git hooks
 
 ### Directory Structure
 
 #### Backend (Laravel)
-- `src/app/` - Laravel application code (controllers, models, middleware)
-- `src/tests/` - PHP tests (Unit and Feature directories)
+- `backend/app/` - Laravel application code (controllers, models, middleware)
+- `backend/tests/` - PHP tests (Unit and Feature directories)
+- `backend/config/` - Laravel configuration files
+- `backend/database/` - Migrations, seeders, factories
+- `backend/routes/` - Route definitions (web.php, api.php)
 
 #### Frontend (FSD Architecture)
-- `src/resources/js-fsd/` - Vue.js frontend application following FSD principles
+- `frontend/src/` - Vue.js frontend application following FSD principles
   - `app/` - Application-wide setup, providers, app entry point
-  - `pages/` - Inertia.js pages (Dashboard, Settings, Auth pages, etc.)
-  - `widgets/` - Large composite UI blocks (AppShell, Navigation, Layout widgets)
-  - `features/` - Business features (Auth, Settings, User management, Appearance)
+  - `pages/` - Page components
+  - `widgets/` - Large composite UI blocks
+  - `features/` - Business features (Auth, Settings, User management)
   - `entities/` - Business entities (User, etc.)
   - `shared/` - Shared utilities and components
-    - `ui/` - Reusable UI components (Reka UI library + common components)
+    - `ui/` - Reusable UI components
     - `lib/` - Utility functions
-    - `composables/` - Vue composables (useAppearance, useTwoFactorAuth, etc.)
     - `types/` - TypeScript type definitions
-    - `api/` - API actions and routes
-    - `config/` - Configuration (Wayfinder, etc.)
 
-#### Path Aliases
-- `@app/*` → `src/resources/js-fsd/app/*`
-- `@pages/*` → `src/resources/js-fsd/pages/*`
-- `@widgets/*` → `src/resources/js-fsd/widgets/*`
-- `@features/*` → `src/resources/js-fsd/features/*`
-- `@entities/*` → `src/resources/js-fsd/entities/*`
-- `@shared/*` → `src/resources/js-fsd/shared/*`
-- `~/*` → `src/resources/js-fsd/*`
-
-- `src/resources/css/` - Stylesheets
+#### Root Configuration
+- `mise.toml` - Task definitions and tool management
+- `lefthook.yml` - Git hooks configuration for code quality
 
 ## Development Commands
 
 ### Setup
 ```bash
-cd src
-composer run setup  # Full project setup (install dependencies, generate key, migrate, build)
+mise run setup  # Full project setup (install dependencies, generate key, migrate)
 ```
 
 ### Development Server
 ```bash
-cd src
-composer run dev     # Start all development services (server, queue, logs, vite)
-composer run dev:ssr # Development with SSR support
+mise run dev     # Start Laravel development server
+mise run vite    # Start Vite development server (frontend)
 ```
 
 ### Building
 ```bash
-cd src
-npm run build        # Production build
-npm run build:ssr    # Production build with SSR
+mise run build       # Production build for frontend
+mise run build-ssr   # Production build with SSR support
 ```
 
 ### Code Quality
 ```bash
-cd src
-npm run lint         # ESLint with auto-fix
-npm run format       # Prettier formatting
-npm run format:check # Check formatting
-./vendor/bin/pint    # Laravel Pint (PHP formatting)
+mise run lint        # ESLint with auto-fix (frontend)
+mise run format      # Prettier formatting (frontend)
+mise run format-php  # Laravel Pint (PHP formatting)
 ```
 
 ### Testing
 ```bash
-cd src
-composer run test    # Run all PHP tests
-php artisan test     # Alternative test command
+mise run test        # Run PHP tests (backend)
+cd frontend && npm run test:unit  # Run frontend tests
 ```
 
-### Individual Development Services
+### Database Operations
 ```bash
-cd src
-php artisan serve          # Development server
-php artisan queue:listen   # Queue worker
-php artisan pail           # Real-time logs
-npm run dev               # Vite development server
+mise run migrate     # Run database migrations
+mise run fresh       # Fresh migrate with seeding
 ```
 
-## Key Features
+### Individual Services
+```bash
+mise run serve       # Laravel development server only
+mise run queue       # Queue worker
+mise run logs        # Real-time logs (Laravel Pail)
+```
 
-- **Authentication**: Laravel Fortify with 2FA support
-- **UI Components**: Reka UI component library
-- **Theme Support**: Light/dark mode with appearance composable
-- **Settings Pages**: Profile, Password, Two-Factor, Appearance
-- **Real-time Development**: Concurrent server, queue, logs, and asset compilation
+### Direct Commands (alternative to mise)
+```bash
+# Backend
+cd backend
+composer run setup   # Setup backend
+composer run dev      # Development server  
+composer run test     # Run tests
+./vendor/bin/pint     # Format PHP code
 
-## Testing Notes
+# Frontend  
+cd frontend
+npm install           # Install dependencies
+npm run dev           # Development server
+npm run build         # Production build
+npm run test:unit     # Run tests
+npm run lint          # Lint and fix
+npm run format        # Format code
+```
 
-- Uses Pest as the testing framework
-- Test environment configured with SQLite in-memory database
-- Feature tests cover settings functionality
-- Run tests with `composer run test` from the `src/` directory
+## Architecture Notes
+
+### Monorepo Structure
+- **Backend and Frontend Separation**: Backend in `backend/`, frontend in `frontend/`
+- **Task Management**: Uses `mise` for unified task running across both parts
+- **Code Quality**: Automated formatting and linting with pre-commit hooks via `lefthook`
+
+### Backend (Laravel 12)
+- **Authentication**: Laravel Sanctum for API authentication
+- **Testing Framework**: PHPUnit with Laravel's testing utilities
+- **Code Style**: Laravel Pint for PHP formatting
+- **Database**: Configured for SQLite (development) and other databases
+
+### Frontend (Vue 3 + TypeScript)
+- **Architecture**: Feature-Sliced Design (FSD) for scalable structure
+- **Testing**: Vitest for unit testing
+- **Build Tool**: Vite for fast development and building
+- **Code Quality**: ESLint + Prettier for consistent code style
+- **State Management**: Pinia for Vue state management
+
+### Development Workflow
+- **Git Hooks**: Pre-commit hooks run formatting, linting, and tests automatically
+- **Tool Management**: `mise` manages Node.js version and provides unified commands
+- **Separate Servers**: Backend and frontend run on different ports during development
+
+## Important Development Notes
+
+- Always run commands from the project root using `mise run <task>` for consistency
+- Pre-commit hooks will automatically format and lint code before commits
+- Backend tests should be run before making changes to API endpoints
+- Frontend follows FSD architecture - place new features in appropriate layers
