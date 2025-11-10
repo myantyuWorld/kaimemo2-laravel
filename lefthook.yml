@@ -11,4 +11,4 @@ pre-commit:
       run: "mise run format-php"
       stage_fixed: true
     test:
-      run: "mise run test"
+      run: "mise run test"# Test change
