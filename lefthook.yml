@@ -2,17 +2,17 @@ pre-commit:
   parallel: true
   commands:
     format:
-      root: "src/"
+      root: "frontend/"
       run: "npm run format"
       stage_fixed: true
     lint:
-      root: "src/"
+      root: "frontend/"
       run: "npm run lint"
       stage_fixed: true
     pint:
-      root: "src/"
+      root: "backend/"
       run: "./vendor/bin/pint"
       stage_fixed: true
     test:
-      root: "src/"
+      root: "backend/"
       run: "composer run test"
