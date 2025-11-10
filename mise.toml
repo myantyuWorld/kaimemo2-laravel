@@ -61,3 +61,7 @@ run = "cd backend && php artisan serve"
 [tasks.vite]
 description = "Start Vite development server"
 run = "cd frontend && npm run dev"
+
+[tasks.psql]
+description = "Connect to PostgreSQL container"
+run = "docker exec -it kaimemo2_postgres psql -U kaimemo2_user -d kaimemo2"
