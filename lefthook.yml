@@ -2,17 +2,13 @@ pre-commit:
   parallel: true
   commands:
     format:
-      root: "frontend/"
-      run: "npm run format"
+      run: "mise run format"
       stage_fixed: true
     lint:
-      root: "frontend/"
-      run: "npm run lint"
+      run: "mise run lint"
       stage_fixed: true
-    pint:
-      root: "backend/"
-      run: "./vendor/bin/pint"
+    format-php:
+      run: "mise run format-php"
       stage_fixed: true
     test:
-      root: "backend/"
-      run: "composer run test"
+      run: "mise run test"

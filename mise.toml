@@ -1,65 +1,63 @@
 [tools]
 lefthook = "latest"
 node = "20"
-php = "8.3"
-composer = "latest"
 
 [tasks.setup]
 description = "Full project setup"
-run = "cd src && composer run setup"
+run = "cd backend && composer run setup"
 
 [tasks.dev]
 description = "Start development server with all services"
-run = "cd src && composer run dev"
+run = "cd backend && composer run dev"
 
 [tasks.dev-ssr]
 description = "Start development server with SSR support"
-run = "cd src && composer run dev:ssr"
+run = "cd backend && composer run dev:ssr"
 
 [tasks.build]
 description = "Build for production"
-run = "cd src && npm run build"
+run = "cd frontend && npm run build"
 
 [tasks.build-ssr]
 description = "Build for production with SSR"
-run = "cd src && npm run build:ssr"
+run = "cd frontend && npm run build:ssr"
 
 [tasks.lint]
 description = "Run ESLint with auto-fix"
-run = "cd src && npm run lint"
+run = "cd frontend && npm run lint"
 
 [tasks.format]
 description = "Format code with Prettier"
-run = "cd src && npm run format"
+run = "cd frontend && npm run format"
 
 [tasks.format-php]
 description = "Format PHP code with Pint"
-run = "cd src && ./vendor/bin/pint"
+run = "cd backend && ./vendor/bin/pint"
 
 [tasks.test]
 description = "Run PHP tests"
-run = "cd src && composer run test"
+run = "cd backend && composer run test"
 
 [tasks.migrate]
 description = "Run database migrations"
-run = "cd src && php artisan migrate"
+run = "cd backend && php artisan migrate"
 
 [tasks.fresh]
 description = "Fresh migrate with seeding"
-run = "cd src && php artisan migrate:fresh --seed"
+run = "cd backend && php artisan migrate:fresh --seed"
 
 [tasks.queue]
 description = "Start queue worker"
-run = "cd src && php artisan queue:listen"
+run = "cd backend && php artisan queue:listen"
 
 [tasks.logs]
 description = "Watch real-time logs"
-run = "cd src && php artisan pail"
+run = "cd backend && php artisan pail"
 
 [tasks.serve]
 description = "Start Laravel development server"
-run = "cd src && php artisan serve"
+run = "cd backend && php artisan serve"
 
 [tasks.vite]
 description = "Start Vite development server"
-run = "cd src && npm run dev"
+run = "cd frontend && npm run dev"
