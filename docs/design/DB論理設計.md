@@ -1,4 +1,5 @@
 # DB論理設計
+- ERD Master
 
 ## ER図
 
@@ -37,6 +38,7 @@ erDiagram
         string name
         string color
         int sort_order
+        boolean is_default
         timestamp created_at
         timestamp updated_at
     }
@@ -216,26 +218,37 @@ erDiagram
 
 ## 主要な設計ポイント
 
-### 1. ユーザー認証
+### 1. カレンダー機能対応
+- `expenses`テーブルで日付別の支出管理
+- カレンダー表示のための月間集計クエリに最適化
+- 日付をタップした際の詳細表示に対応
+
+### 2. 一覧性の向上
+- 支出データは日付・カテゴリ単位での集計が容易
+- スクロール不要での表示を意識したデータ構造
+- カテゴリ別色分け表示（`categories.color`）
+
+### 3. ユーザー認証
 - LINEログインに対応（`users.line_user_id`）
 - OAuth認証情報を`oauth_providers`で管理
 - Laravel Sanctumによるトークン認証
 
-### 2. 買い物メモ共有機能
+### 4. 買い物メモ共有機能
 - システム内ユーザー共有: `shopping_list_shares`テーブル
 - システム外ユーザー共有: `public_share_tokens`テーブルでトークンベース認証
 - 権限管理（read/write）対応
 
-### 3. 通知・バッチ処理
+### 5. 通知・バッチ処理
 - 週次バッチ処理の状態管理（`notification_batches`）
 - 通知送信履歴の記録（`notifications`）
 - ユーザー別通知設定（`notification_settings`）
 
-### 4. 支出・予算管理
-- カテゴリ別予算設定
+### 6. 支出・予算管理
+- カテゴリ別予算設定（食費、日用品、お小遣いの基本カテゴリ）
 - 期間設定可能（月次/週次）
 - 予算有効期間の管理
+- デフォルトカテゴリの設定（`categories.is_default`）
 
-### 5. 拡張性
+### 7. 拡張性
 - JSONカラムで将来的な機能拡張に対応
 - Enum型で値の制約と可読性を確保

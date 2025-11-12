@@ -16,12 +16,32 @@
             justify-content: center;
             border-radius: 4px;
         }
+        .calendar-day {
+            min-height: 80px;
+            border: 1px solid #ddd;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .calendar-day:hover {
+            background-color: #f0f0f0;
+        }
+        .expense-amount {
+            font-size: 0.8em;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #ddd;
+        }
     </style>
 </head>
 <body>
     <div id="app" v-cloak>
         <v-app>
-            <!-- SCR007: ログイン画面 -->
+            <!-- SCR008: ログイン画面 -->
             <div v-if="currentScreen === 'login'">
                 <v-container class="fill-height" fluid>
                     <v-row align="center" justify="center">
@@ -101,6 +121,11 @@
                         @click="navigateTo('expenseInput')"
                     ></v-list-item>
                     <v-list-item
+                        prepend-icon="mdi-calendar"
+                        title="カレンダー"
+                        @click="navigateTo('calendar')"
+                    ></v-list-item>
+                    <v-list-item
                         prepend-icon="mdi-format-list-bulleted"
                         title="支出一覧"
                         @click="navigateTo('expenseList')"
@@ -133,7 +158,60 @@
                 <!-- SCR001: メイン画面（ダッシュボード） -->
                 <div v-if="currentScreen === 'dashboard'">
                     <v-container>
+                        <!-- カレンダー表示（メインコンテンツ） -->
                         <v-row>
+                            <v-col cols="12">
+                                <v-card>
+                                    <v-card-title>
+                                        <v-icon class="mr-2">mdi-calendar</v-icon>
+                                        {{ currentYear }}年{{ currentMonth }}月の支出
+                                        <v-spacer></v-spacer>
+                                        <v-btn icon @click="previousMonth">
+                                            <v-icon>mdi-chevron-left</v-icon>
+                                        </v-btn>
+                                        <v-btn icon @click="nextMonth">
+                                            <v-icon>mdi-chevron-right</v-icon>
+                                        </v-btn>
+                                    </v-card-title>
+                                    <v-card-text>
+                                        <!-- 曜日ヘッダー -->
+                                        <div class="calendar-grid" style="margin-bottom: 1px;">
+                                            <div v-for="day in dayHeaders" :key="day" class="text-center py-2 font-weight-bold">
+                                                {{ day }}
+                                            </div>
+                                        </div>
+                                        <!-- カレンダーグリッド -->
+                                        <div class="calendar-grid">
+                                            <div 
+                                                v-for="day in calendarDays" 
+                                                :key="day.date" 
+                                                class="calendar-day"
+                                                :class="{ 'text--disabled': !day.isCurrentMonth }"
+                                                @click="selectDay(day)"
+                                            >
+                                                <div class="text-right mb-1">{{ day.day }}</div>
+                                                <div v-if="day.expenses > 0" class="expense-amount text-center">
+                                                    ¥{{ day.expenses.toLocaleString() }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </v-card-text>
+                                    <v-card-actions>
+                                        <v-btn color="primary" @click="currentScreen = 'expenseInput'">
+                                            <v-icon class="mr-2">mdi-plus</v-icon>
+                                            支出を追加
+                                        </v-btn>
+                                        <v-btn color="secondary" @click="currentScreen = 'calendar'">
+                                            <v-icon class="mr-2">mdi-calendar</v-icon>
+                                            カレンダー詳細
+                                        </v-btn>
+                                    </v-card-actions>
+                                </v-card>
+                            </v-col>
+                        </v-row>
+
+                        <!-- 今日の支出概要 -->
+                        <v-row class="mt-4">
                             <v-col cols="12">
                                 <v-card>
                                     <v-card-title>
@@ -141,7 +219,7 @@
                                         今日の支出 ({{ today }})
                                     </v-card-title>
                                     <v-card-text>
-                                        <v-list>
+                                        <v-list v-if="todayExpenses.length > 0">
                                             <v-list-item v-for="expense in todayExpenses" :key="expense.id">
                                                 <v-list-item-content>
                                                     <v-list-item-title>{{ expense.item }}</v-list-item-title>
@@ -152,21 +230,14 @@
                                                 </v-list-item-action>
                                             </v-list-item>
                                         </v-list>
+                                        <div v-else class="text-center text--disabled py-4">
+                                            今日の支出はありません
+                                        </div>
                                         <v-divider class="my-4"></v-divider>
                                         <div class="text-h6 text-right">
                                             今日の合計: ¥{{ todayTotal.toLocaleString() }}
                                         </div>
                                     </v-card-text>
-                                    <v-card-actions>
-                                        <v-btn color="primary" @click="currentScreen = 'expenseInput'">
-                                            <v-icon class="mr-2">mdi-plus</v-icon>
-                                            支出を追加
-                                        </v-btn>
-                                        <v-btn color="secondary" @click="currentScreen = 'expenseList'">
-                                            <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
-                                            支出一覧
-                                        </v-btn>
-                                    </v-card-actions>
                                 </v-card>
                             </v-col>
                         </v-row>
@@ -265,7 +336,7 @@
                             <v-card-text>
                                 <v-form>
                                     <v-row>
-                                        <v-col cols="12" md="6">
+                                        <v-col cols="12">
                                             <v-text-field
                                                 v-model="expenseForm.date"
                                                 label="日付"
@@ -273,29 +344,25 @@
                                                 required
                                             ></v-text-field>
                                         </v-col>
-                                        <v-col cols="12" md="6">
-                                            <v-select
-                                                v-model="expenseForm.category"
-                                                :items="categories"
-                                                label="カテゴリ"
-                                                required
-                                            ></v-select>
+                                        <v-col cols="12">
+                                            <v-subheader>カテゴリ別金額入力</v-subheader>
+                                            <div v-for="category in ['食費', '日用品', 'お小遣い']" :key="category" class="mb-3">
+                                                <v-text-field
+                                                    v-model="expenseForm.categoryAmounts[category]"
+                                                    :label="category + ' (¥)'"
+                                                    type="number"
+                                                    prefix="¥"
+                                                    min="0"
+                                                ></v-text-field>
+                                            </div>
                                         </v-col>
                                         <v-col cols="12">
-                                            <v-text-field
-                                                v-model="expenseForm.item"
-                                                label="品目"
-                                                required
-                                            ></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12" md="6">
-                                            <v-text-field
-                                                v-model="expenseForm.amount"
-                                                label="金額"
-                                                type="number"
-                                                prefix="¥"
-                                                required
-                                            ></v-text-field>
+                                            <v-textarea
+                                                v-model="expenseForm.memo"
+                                                label="メモ（任意）"
+                                                rows="2"
+                                                placeholder="例：宅飲みがあった、BBQをしたなど"
+                                            ></v-textarea>
                                         </v-col>
                                     </v-row>
                                 </v-form>
@@ -313,7 +380,85 @@
                     </v-container>
                 </div>
 
-                <!-- SCR003: 支出一覧画面 -->
+                <!-- SCR003: カレンダー画面 -->
+                <div v-if="currentScreen === 'calendar'">
+                    <v-container>
+                        <v-card>
+                            <v-card-title>
+                                <v-icon class="mr-2">mdi-calendar</v-icon>
+                                {{ currentYear }}年{{ currentMonth }}月
+                                <v-spacer></v-spacer>
+                                <v-btn icon @click="previousMonth">
+                                    <v-icon>mdi-chevron-left</v-icon>
+                                </v-btn>
+                                <v-btn icon @click="nextMonth">
+                                    <v-icon>mdi-chevron-right</v-icon>
+                                </v-btn>
+                            </v-card-title>
+                            <v-card-text>
+                                <!-- 曜日ヘッダー -->
+                                <div class="calendar-grid" style="margin-bottom: 1px;">
+                                    <div v-for="day in dayHeaders" :key="day" class="text-center py-2 font-weight-bold">
+                                        {{ day }}
+                                    </div>
+                                </div>
+                                <!-- カレンダーグリッド -->
+                                <div class="calendar-grid">
+                                    <div 
+                                        v-for="day in calendarDays" 
+                                        :key="day.date" 
+                                        class="calendar-day"
+                                        :class="{ 'text--disabled': !day.isCurrentMonth }"
+                                        @click="selectDay(day)"
+                                    >
+                                        <div class="text-right mb-1">{{ day.day }}</div>
+                                        <div v-if="day.expenses > 0" class="expense-amount text-center">
+                                            ¥{{ day.expenses.toLocaleString() }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </v-card-text>
+                        </v-card>
+
+                        <!-- 選択日の支出詳細 -->
+                        <v-card v-if="selectedDay" class="mt-4">
+                            <v-card-title>
+                                <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
+                                {{ selectedDay.date }} の支出内訳
+                            </v-card-title>
+                            <v-card-text>
+                                <!-- カテゴリ別支出表示 -->
+                                <div v-for="category in categories" :key="category" class="mb-3">
+                                    <div v-if="getExpensesByDateAndCategory(selectedDay.date, category).length > 0">
+                                        <v-subheader>{{ category }}</v-subheader>
+                                        <v-list>
+                                            <v-list-item 
+                                                v-for="expense in getExpensesByDateAndCategory(selectedDay.date, category)" 
+                                                :key="expense.id"
+                                            >
+                                                <v-list-item-content>
+                                                    <v-list-item-title>{{ expense.item }}</v-list-item-title>
+                                                </v-list-item-content>
+                                                <v-list-item-action>
+                                                    <v-chip color="error">¥{{ expense.amount.toLocaleString() }}</v-chip>
+                                                </v-list-item-action>
+                                            </v-list-item>
+                                        </v-list>
+                                        <div class="text-right font-weight-bold mb-2">
+                                            {{ category }}小計: ¥{{ getCategoryTotal(selectedDay.date, category).toLocaleString() }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <v-divider class="my-4"></v-divider>
+                                <div class="text-h6 text-right">
+                                    {{ selectedDay.date }} 合計: ¥{{ getDayTotal(selectedDay.date).toLocaleString() }}
+                                </div>
+                            </v-card-text>
+                        </v-card>
+                    </v-container>
+                </div>
+
+                <!-- SCR004: 支出一覧画面 -->
                 <div v-if="currentScreen === 'expenseList'">
                     <v-container>
                         <v-card>
@@ -357,7 +502,7 @@
                     </v-container>
                 </div>
 
-                <!-- SCR004: 予算管理画面 -->
+                <!-- SCR005: 予算管理画面 -->
                 <div v-if="currentScreen === 'budgetManagement'">
                     <v-container>
                         <v-card>
@@ -402,7 +547,7 @@
                     </v-container>
                 </div>
 
-                <!-- SCR005: 買い物メモ画面 -->
+                <!-- SCR006: 買い物メモ画面 -->
                 <div v-if="currentScreen === 'shoppingMemo'">
                     <v-container>
                         <v-card>
@@ -467,7 +612,7 @@
                     </v-container>
                 </div>
 
-                <!-- SCR006: 集計画面 -->
+                <!-- SCR007: 集計画面 -->
                 <div v-if="currentScreen === 'statistics'">
                     <v-container>
                         <v-card>
@@ -571,7 +716,7 @@
                     </v-container>
                 </div>
 
-                <!-- SCR008: ユーザー管理画面 -->
+                <!-- SCR009: ユーザー管理画面 -->
                 <div v-if="currentScreen === 'userManagement'">
                     <v-container>
                         <v-card>
@@ -625,6 +770,11 @@
                     currentScreen: 'login',
                     drawer: false,
                     today: new Date().toISOString().substr(0, 10),
+                    currentYear: new Date().getFullYear(),
+                    currentMonth: new Date().getMonth() + 1,
+                    currentDate: new Date(),
+                    selectedDay: null,
+                    dayHeaders: ['日', '月', '火', '水', '木', '金', '土'],
                     
                     // ログイン関連
                     loginForm: {
@@ -636,6 +786,7 @@
                     screenTitles: {
                         dashboard: 'ダッシュボード',
                         expenseInput: '支出入力',
+                        calendar: 'カレンダー',
                         expenseList: '支出一覧',
                         budgetManagement: '予算管理',
                         shoppingMemo: '買い物メモ',
@@ -647,17 +798,19 @@
                     todayExpenses: [
                         { id: 1, item: '牛乳', amount: 180, category: '食費' },
                         { id: 2, item: 'パン', amount: 120, category: '食費' },
-                        { id: 3, item: 'ガソリン', amount: 3500, category: '交通費' }
+                        { id: 3, item: 'ガソリン', amount: 3500, category: 'その他' }
                     ],
                     
                     allExpenses: [
                         { id: 1, date: '2024-01-15', item: '牛乳', amount: 180, category: '食費' },
                         { id: 2, date: '2024-01-15', item: 'パン', amount: 120, category: '食費' },
-                        { id: 3, date: '2024-01-15', item: 'ガソリン', amount: 3500, category: '交通費' },
+                        { id: 3, date: '2024-01-15', item: 'ガソリン', amount: 3500, category: 'その他' },
                         { id: 4, date: '2024-01-14', item: 'お米', amount: 2800, category: '食費' },
-                        { id: 5, date: '2024-01-14', item: '映画チケット', amount: 1800, category: '娯楽' },
+                        { id: 5, date: '2024-01-14', item: '映画チケット', amount: 1800, category: 'お小遣い' },
                         { id: 6, date: '2024-01-13', item: 'コーヒー', amount: 350, category: '食費' },
-                        { id: 7, date: '2024-01-13', item: '電車', amount: 220, category: '交通費' }
+                        { id: 7, date: '2024-01-13', item: '洗剤', amount: 480, category: '日用品' },
+                        { id: 8, date: '2024-01-12', item: 'ランチ', amount: 800, category: 'お小遣い' },
+                        { id: 9, date: '2024-01-11', item: 'シャンプー', amount: 650, category: '日用品' }
                     ],
                     
                     expenseHeaders: [
@@ -670,9 +823,12 @@
                     
                     expenseForm: {
                         date: new Date().toISOString().substr(0, 10),
-                        item: '',
-                        amount: '',
-                        category: ''
+                        categoryAmounts: {
+                            '食費': '',
+                            '日用品': '',
+                            'お小遣い': ''
+                        },
+                        memo: ''
                     },
                     
                     expenseFilter: {
@@ -680,14 +836,13 @@
                         category: '全て'
                     },
                     
-                    categories: ['食費', '交通費', '娯楽', '日用品', '医療費', 'その他'],
+                    categories: ['食費', '日用品', 'お小遣い', 'その他'],
                     
                     // 予算関連データ
                     budgets: [
                         { category: '食費', total: 50000, remaining: 32200 },
-                        { category: '交通費', total: 15000, remaining: 11280 },
-                        { category: '娯楽', total: 20000, remaining: 18200 },
-                        { category: '日用品', total: 10000, remaining: 8500 }
+                        { category: '日用品', total: 10000, remaining: 8500 },
+                        { category: 'お小遣い', total: 15000, remaining: 12000 }
                     ],
                     
                     // 買い物メモ関連データ
@@ -739,6 +894,31 @@
             computed: {
                 todayTotal() {
                     return this.todayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                },
+                calendarDays() {
+                    const firstDay = new Date(this.currentYear, this.currentMonth - 1, 1);
+                    const lastDay = new Date(this.currentYear, this.currentMonth, 0);
+                    const startDate = new Date(firstDay);
+                    startDate.setDate(startDate.getDate() - firstDay.getDay());
+                    
+                    const days = [];
+                    for (let i = 0; i < 42; i++) {
+                        const date = new Date(startDate);
+                        date.setDate(startDate.getDate() + i);
+                        
+                        const dateString = date.toISOString().substr(0, 10);
+                        const dayExpenses = this.allExpenses
+                            .filter(expense => expense.date === dateString)
+                            .reduce((sum, expense) => sum + expense.amount, 0);
+                        
+                        days.push({
+                            date: dateString,
+                            day: date.getDate(),
+                            isCurrentMonth: date.getMonth() === this.currentMonth - 1,
+                            expenses: dayExpenses
+                        });
+                    }
+                    return days;
                 }
             },
             methods: {
@@ -750,10 +930,9 @@
                 },
                 navigateTo(screen) {
                     this.currentScreen = screen;
-                    this.drawer = false; // メニューを閉じる
+                    this.drawer = false;
                 },
                 addExpense() {
-                    // 支出追加のモック処理
                     alert('支出が追加されました');
                     this.currentScreen = 'dashboard';
                 },
@@ -772,6 +951,46 @@
                         alert(`${this.newMemberEmail} に招待を送信しました`);
                         this.newMemberEmail = '';
                     }
+                },
+                previousMonth() {
+                    if (this.currentMonth === 1) {
+                        this.currentMonth = 12;
+                        this.currentYear--;
+                    } else {
+                        this.currentMonth--;
+                    }
+                    this.selectedDay = null;
+                },
+                nextMonth() {
+                    if (this.currentMonth === 12) {
+                        this.currentMonth = 1;
+                        this.currentYear++;
+                    } else {
+                        this.currentMonth++;
+                    }
+                    this.selectedDay = null;
+                },
+                selectDay(day) {
+                    if (day.isCurrentMonth) {
+                        this.selectedDay = day;
+                        if (this.currentScreen === 'dashboard') {
+                            this.currentScreen = 'calendar';
+                        }
+                    }
+                },
+                getExpensesByDateAndCategory(date, category) {
+                    return this.allExpenses.filter(expense => 
+                        expense.date === date && expense.category === category
+                    );
+                },
+                getCategoryTotal(date, category) {
+                    return this.getExpensesByDateAndCategory(date, category)
+                        .reduce((sum, expense) => sum + expense.amount, 0);
+                },
+                getDayTotal(date) {
+                    return this.allExpenses
+                        .filter(expense => expense.date === date)
+                        .reduce((sum, expense) => sum + expense.amount, 0);
                 }
             }
         }).use(vuetify).mount('#app');
