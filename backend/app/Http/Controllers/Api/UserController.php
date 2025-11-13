@@ -4,25 +4,25 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\UseCases\User\DestroyUserAction;
+use App\UseCases\User\IndexUsersAction;
+use App\UseCases\User\ShowUserAction;
+use App\UseCases\User\StoreUserAction;
+use App\UseCases\User\UpdateUserAction;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, IndexUsersAction $action)
     {
-        $users = User::with('posts')
-            ->when($request->search, fn ($query) => $query->where('name', 'like', '%'.$request->search.'%')
-                ->orWhere('email', 'like', '%'.$request->search.'%')
-            )
-            ->paginate($request->get('per_page', 15));
+        $users = $action->execute($request);
 
         return response()->json($users);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, StoreUserAction $action)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -30,21 +30,19 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        $user = $action->execute($request);
 
-        return response()->json($user->load('posts'), Response::HTTP_CREATED);
+        return response()->json($user, Response::HTTP_CREATED);
     }
 
-    public function show(User $user)
+    public function show(User $user, ShowUserAction $action)
     {
-        return response()->json($user->load('posts'));
+        $result = $action->execute($user);
+
+        return response()->json($result);
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user, UpdateUserAction $action)
     {
         $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -52,18 +50,14 @@ class UserController extends Controller
             'password' => 'sometimes|string|min:8',
         ]);
 
-        $user->update(array_filter([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $request->password ? Hash::make($request->password) : null,
-        ]));
+        $result = $action->execute($request, $user);
 
-        return response()->json($user->load('posts'));
+        return response()->json($result);
     }
 
-    public function destroy(User $user)
+    public function destroy(User $user, DestroyUserAction $action)
     {
-        $user->delete();
+        $action->execute($user);
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }

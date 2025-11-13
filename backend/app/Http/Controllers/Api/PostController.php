@@ -4,26 +4,24 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\UseCases\Post\DestroyPostAction;
+use App\UseCases\Post\IndexPostsAction;
+use App\UseCases\Post\ShowPostAction;
+use App\UseCases\Post\StorePostAction;
+use App\UseCases\Post\UpdatePostAction;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PostController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, IndexPostsAction $action)
     {
-        $posts = Post::with('user')
-            ->when($request->status, fn ($query) => $query->where('status', $request->status)
-            )
-            ->when($request->search, fn ($query) => $query->where('title', 'like', '%'.$request->search.'%')
-                ->orWhere('content', 'like', '%'.$request->search.'%')
-            )
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+        $posts = $action->execute($request);
 
         return response()->json($posts);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, StorePostAction $action)
     {
         $request->validate([
             'title' => 'required|string|max:255',
@@ -32,22 +30,19 @@ class PostController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $post = Post::create([
-            'title' => $request->title,
-            'content' => $request->content,
-            'status' => $request->get('status', 'draft'),
-            'user_id' => $request->user_id,
-        ]);
+        $post = $action->execute($request);
 
-        return response()->json($post->load('user'), Response::HTTP_CREATED);
+        return response()->json($post, Response::HTTP_CREATED);
     }
 
-    public function show(Post $post)
+    public function show(Post $post, ShowPostAction $action)
     {
-        return response()->json($post->load('user'));
+        $result = $action->execute($post);
+
+        return response()->json($result);
     }
 
-    public function update(Request $request, Post $post)
+    public function update(Request $request, Post $post, UpdatePostAction $action)
     {
         $request->validate([
             'title' => 'sometimes|string|max:255',
@@ -55,14 +50,14 @@ class PostController extends Controller
             'status' => 'sometimes|in:draft,published,archived',
         ]);
 
-        $post->update($request->only(['title', 'content', 'status']));
+        $result = $action->execute($request, $post);
 
-        return response()->json($post->load('user'));
+        return response()->json($result);
     }
 
-    public function destroy(Post $post)
+    public function destroy(Post $post, DestroyPostAction $action)
     {
-        $post->delete();
+        $action->execute($post);
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
